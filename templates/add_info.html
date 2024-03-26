@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Class, Chapter, Topic</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="class_show" data-class-id="{{ class_id }}"></div>
+    <div id="chapter_show" data-class-id="{{ chapter_id }}"></div>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm">
+                <h3>Thêm Lớp</h3>
+                <form action="/class" method="post">
+                    <div class="form-group">
+                        <label for="class_name">Class Name:</label>
+                        <input type="text" id="class_name" name="class_name" class="form-control" required>
+                        <input type="hidden" id="whoami" name="whoami" class="form-control" value="admin" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Class</button>
+                </form>
+            </div>
+            <div class="col-sm">
+                <h3>Thêm Chapter vào Class</h3>
+                <form action="/chapter" method="post">
+                    <div class="form-group">
+                        <label for="chapter_name">Chapter Name:</label>
+                        <input type="text" id="chapter_name" name="chapter_name" class="form-control" required>
+                        <input type="hidden" id="whoami" name="whoami" class="form-control" value="admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="class_id">Class:</label>
+                        <select id="class_id" name="class_id" class="form-control" required >
+
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Chapter</button>
+                </form>
+            </div>
+            <div class="col-sm">
+                <h3>Thêm Topic vào Chapter</h3>
+                <form action="/topic" method="post">
+                    <div class="form-group">
+                        <label for="topic_name">Chapter Name:</label>
+                        <input type="text" id="topic_name" name="topic_name" class="form-control" required>
+                        <input type="hidden" id="whoami" name="whoami" class="form-control" value="admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="class_id">Class:</label>
+
+                        <select id="class_id" name="class_id" class="form-control" required onchange="loadChapter()">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="chapter_id">Chapter:</label>
+                        
+                        <select id="chapter_id" name="chapter_id" class="form-control" required>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Topic</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <strong class="d-flex bd-highlight">{{notify}}</strong>
+    </div>
+    
+</body>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</html>

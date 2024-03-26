@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Questions</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">All Questions</h1>
+        <div class="form-row mb-3">
+            <div class="col-md-4">
+                <select class="form-control" id="class_select">
+                    <!-- <option value="">Select Class</option> -->
+                    {% for class in classes %}
+                        <option value="{{ class.id }}">{{ class }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control" id="chapter_select">
+                    <option value="">Select Chapter</option>
+                    <!-- Options for chapters will be populated dynamically based on selected class -->
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control" id="topic_select">
+                    <option value="">Select Topic</option>
+                    <!-- Options for topics will be populated dynamically based on selected chapter -->
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Question</th>
+                        <th scope="col">Option 1</th>
+                        <th scope="col">Option 2</th>
+                        <th scope="col">Option 3</th>
+                        <th scope="col">Option 4</th>
+                        <th scope="col">Correct Option</th>
+                        <th scope="col">Explanation</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Tìm số hạng chứa \(x^{3} y\) trong khai triển \(\left(x y+\frac{1}{y}\right)^{5}\)</td>
+                        <td>A. \(5 x^{3} y\).</td>
+                        <td>B. \(3 x^{3} y\).</td>
+                        <td>C. \(4 x^{3} y\).</td>
+                        <td>D. \(10 x^{3} y\).</td>
+                        <td>D. \(10 x^{3} y\).</td>
+                        <td>Nothing</td>
+                        <td>
+                            <a href="#" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                            <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Add more rows here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+    <script>
+        // Example JavaScript to populate chapter and topic selects dynamically based on selected class
+question
+    </script>
+</body>
+
+</html>

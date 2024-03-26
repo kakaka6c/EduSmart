@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Question</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Add Question</h1>
+        <form action="/add_question" method="post">
+            <div class="form-group">
+                <label for="class_select">Select Class:</label>
+                <select class="form-control" id="class_id" name="class_id" onchange="loadChapter()">
+                    <option value="">Select Class</option>
+                    {% for class in classes %}
+                    <option value="{{ class[0] }}">Grade {{class[1]}}</option>
+                    {% endfor %}
+                    <!-- Options for classes will be populated dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="chapter_select">Select Chapter:</label>
+                <select class="form-control" id="chapter_id" name="chapter_id" onchange="loadTopics()">
+                    <option value="">Select Chapter</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="topic_select">Select Topic:</label>
+                <select class="form-control" id="topic_id" name="topic_id">
+                    <option value="">Select Topic</option>
+                    <!-- Options for topics will be populated dynamically based on selected chapter -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="question">Question:</label>
+                <textarea class="form-control" id="question" name="question" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="option1">Option 1:</label>
+                <input type="text" class="form-control" id="option1" name="option" onchange="add_answer()" required>
+            </div>
+            <div class="form-group">
+                <label for="option2">Option 2:</label>
+                <input type="text" class="form-control" id="option2" name="option" onchange="add_answer()" required>
+            </div>
+            <div class="form-group">
+                <label for="option3">Option 3:</label>
+                <input type="text" class="form-control" id="option3" name="option" onchange="add_answer()" required>
+            </div>
+            <div class="form-group">
+                <label for="option4">Option 4:</label>
+                <input type="text" class="form-control" id="option4" name="option" onchange="add_answer()" required>
+            </div>
+            <div class="form-group">
+                <label for="correct_option">Correct Option:</label>
+                <select class="form-control" id="correct_option" name="correct_option" required>
+                    <option value="1">Option 1</option>
+                    <option value="2">Option 2</option>
+                    <option value="3">Option 3</option>
+                    <option value="4">Option 4</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="explanation">Explanation:</label>
+                <textarea class="form-control" id="explaination" name="explaination" rows="4" value=""></textarea>
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="ans" name="ans" hidden>
+                <input type="text" class="form-control" id="correct" name="correct" hidden>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Question</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Your custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/question.js') }}"></script>
+</body>
+
+</html>
