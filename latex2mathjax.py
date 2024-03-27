@@ -1,8 +1,8 @@
 def convert_latex_to_mathjax(string):
     result = ''
     replace_char = '\\'
-    odd_replacement = '\\('
-    even_replacement = '\\)'
+    odd_replacement = '\\\\('
+    even_replacement = '\\\\)'
     dollar_count = 0
 
     for char in string:

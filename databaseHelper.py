@@ -3,8 +3,6 @@ import sqlite3
 class CreateDatabase:
     def __init__(self, db_name):
         self.db_name = db_name
-        self.create_database()
-        self.create_tables()
         
     def create_database(self):
         try:
@@ -109,6 +107,36 @@ class CreateDatabase:
         except sqlite3.Error as e:
             print("Lỗi khi tạo bảng:", e)
 
+class DatabaseHelper:
+    def __init__(self, db_name):
+        self.db_name = db_name
+        
+    def get_user_by_username(self, username):
+        query = "SELECT * FROM User WHERE Username = ?"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (username,))
+            user = cursor.fetchone()
+            conn.close()
+            return user
+        except sqlite3.Error as e:
+            print("Lỗi khi truy vấn dữ liệu:", e)
+            return None
+    
+    def get_all_questions(self):
+        query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query)
+            questions = cursor.fetchall()
+            conn.close()
+            return questions
+        except sqlite3.Error as e:
+            print("Lỗi khi truy vấn dữ liệu:", e)
+            return None
+    
 if __name__ == "__main__":
     helper = CreateDatabase("EduSmart.db")
     helper.create_database()

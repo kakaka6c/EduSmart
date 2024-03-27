@@ -1,9 +1,9 @@
 function loadChapter() {
-    var class_id = document.getElementsByName('class_id')[0].value;
+    var class_id = document.getElementById('class_select')[0].value;
     if (class_id == '') {
         class_id = 1;
     }
-    var chapterDropdown = document.getElementById('chapter_id');
+    var chapterDropdown = document.getElementById('chapter_select');
     chapterDropdown.innerHTML = '';
     var option = document.createElement('option');
     option.value = 0;
@@ -24,8 +24,8 @@ function loadChapter() {
 }
 
 function loadTopics() {
-    var chapter_id = document.getElementById('chapter_id').value;
-    var topicDropdown = document.getElementById('topic_id');
+    var chapter_id = document.getElementById('chapter_select').value;
+    var topicDropdown = document.getElementById('topic_select');
     topicDropdown.innerHTML = '';
     fetch('/topic?chapter_id=' + chapter_id, { method: 'GET' })
         .then(response => response.json())

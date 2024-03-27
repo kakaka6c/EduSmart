@@ -1,11 +1,15 @@
 from flask import Flask, jsonify, request,render_template,redirect,url_for
+import json
 import sqlite3
 from databaseHelper import *
 import hashlib
+import codecs
 import latex2mathjax
 
 app = Flask(__name__)
 DATABASE = 'EduSmart.db'
+DB_HELPER = DatabaseHelper(DATABASE)
+DB_CREATE = CreateDatabase(DATABASE)
 
 def execute_query(query, params=()):
     try:
@@ -110,8 +114,10 @@ def class_db():
     else:
         query = "SELECT * FROM Class"
         classes = execute_query(query)
+        
         if classes:
-            return jsonify(classes)
+            json_data = [{"id": item[0], "name": item[1]} for item in classes]
+            return jsonify(json_data)
         else:
             return jsonify([])
 # create docs for method
@@ -134,7 +140,8 @@ def topic_db():
         query = "SELECT TopicID,TopicName FROM Topic WHERE ChapterID = ?"
         topics = execute_query(query, (chapter_id,))
         if topics:
-            return jsonify(topics)
+            json_data = [{"id": item[0], "name": item[1]} for item in topics]
+            return jsonify(json_data)
         else:
             return jsonify([])
 
@@ -155,7 +162,8 @@ def chapter_db():
         class_id = request.args.get('class_id')
         chapters = execute_query(query, (class_id,))
         if chapters:
-            return jsonify(chapters)
+            json_data = [{"id": item[0], "name": item[1]} for item in chapters]
+            return jsonify(json_data)
         else:
             return jsonify([])
 
@@ -175,21 +183,36 @@ def add_info():
 @app.route('/question_manager', methods=['GET'])
 def question_manager():
     classes=execute_query("SELECT * FROM Class")
-    #  get all question and answer from database
-    if request.method == 'POST':
-        class_id = request.form.get('class_id')
-        topic_id = request.form.get('topic_id')
-        chapter_id = request.form.get('chapter_id')
-        query = "SELECT QuestionID, QuestionContent FROM Question WHERE ClassID = ? AND TopicID = ? AND ChapterID = ?"
-        questions = execute_query(query, (class_id, topic_id, chapter_id))
-        if questions:
-            return jsonify(questions)
-        else:
-            return jsonify([])
-        
-        
-        
-    # return render_template('question_manager.html',classes=classes)
+    classes = [{"id": item[0], "name": item[1]} for item in classes]
+    # #  get all question and answer from database
+    # class_id = request.args.get('class_id')
+    # topic_id = request.args.get('topic_id')
+    # chapter_id = request.args.get('chapter_id')
+    # query = "SELECT QuestionID, QuestionContent FROM Question WHERE ClassID = ? AND TopicID = ? AND ChapterID = ?"
+    # questions = execute_query(query, (class_id, topic_id, chapter_id))
+    
+    # if questions:
+    #     json_data = [{"id": item[0], "question": item[1]} for item in questions]
+    #     return jsonify(json_data)
+    # else:
+    #     return jsonify([])
+    
+    questions=DB_HELPER.get_all_questions()
+    if questions:
+        json_data = [
+            {
+                "id": item[0],
+                "question": item[1],
+                "ans_id": item[2],
+                "answer": json.loads(item[3]),
+                "correct_ans": item[4],
+                "explaination": item[5] 
+            } for item in questions
+        ]
+        # convert item[3] to json data
+        return render_template('question_manager.html',questions=json_data,classes=classes)
+    else:
+        return jsonify([])
 
 @app.route('/question', methods=['GET'])
 def question_db():
@@ -200,7 +223,6 @@ def question_db():
 def add_question():
     # add question and answer to database
     data = request.form
-
     class_id = data.get('class_id')
     chapter_id = data.get('chapter_id')
     topic_id = data.get('topic_id')
@@ -209,6 +231,7 @@ def add_question():
     answer = data.get('ans')
     answer = latex2mathjax.convert_latex_to_mathjax(answer)
     correct_answer = data.get('correct')
+    correct_answer = latex2mathjax.convert_latex_to_mathjax(correct_answer)
     explain = data.get('explaination')
     explain = latex2mathjax.convert_latex_to_mathjax(explain)
     query = "INSERT INTO Question (ClassID, TopicID, ChapterID, QuestionContent) VALUES (?, ?, ?, ?)"
@@ -217,7 +240,7 @@ def add_question():
     query = "INSERT INTO Answers (QuestionID, AnswerOptions, CorrectAnswer, Explaination) VALUES (?, ?, ?, ?)"
     execute_query(query, (question_id, answer, correct_answer, explain)) # add answer to database
     return redirect("/question_manager")
-    
+
 
 if __name__ == '__main__':
     app.run(debug=True)

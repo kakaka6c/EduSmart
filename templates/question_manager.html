@@ -14,15 +14,15 @@
         <h1 class="mb-4">All Questions</h1>
         <div class="form-row mb-3">
             <div class="col-md-4">
-                <select class="form-control" id="class_select">
+                <select class="form-control" id="class_select" onchange="loadChapter()">
                     <option value="">Select Class</option>
                     {% for class in classes %}
-                        <option value="{{ class[0] }}">Grade {{ class[1] }}</option>
+                        <option value="{{ class.id }}">Grade {{ class.name }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-4">
-                <select class="form-control" id="chapter_select">
+                <select class="form-control" id="chapter_select" onchange="loadTopics()">
                     <option value="">Select Chapter</option>
                     <!-- Options for chapters will be populated dynamically based on selected class -->
                 </select>
@@ -49,19 +49,23 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for question in questions %}
                     <tr>
-                        <td>{{classes}}</td>
-                        <td>A. \(5 x^{3} y\).</td>
-                        <td>B. \(3 x^{3} y\).</td>
-                        <td>C. \(4 x^{3} y\).</td>
-                        <td>D. \(10 x^{3} y\).</td>
-                        <td>D. \(10 x^{3} y\).</td>
-                        <td>Nothing</td>
+                        
+                        <td>{{question.question}}</td>
+                        <td>{{question.answer.value1}}</td>
+                        <td>{{question.answer.value2}}</td>
+                        <td>{{question.answer.value3}}</td>
+                        <td>{{question.answer.value4}}</td>
+                        <td>{{question.correct_ans}}</td>
+                        <td>{{question.explanation}}</td>
                         <td>
                             <a href="#" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
                             <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></a>
                         </td>
+                        
                     </tr>
+                    {% endfor %}
                     
                     <!-- Add more rows here -->
                 </tbody>
@@ -76,10 +80,7 @@
     <!-- Font Awesome -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
-    <script>
-        // Example JavaScript to populate chapter and topic selects dynamically based on selected class
-question
-    </script>
+    <script src="{{ url_for('static', filename='js/question_manager.js') }}"></script>
 </body>
 
 </html>
