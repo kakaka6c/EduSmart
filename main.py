@@ -172,10 +172,24 @@ def add_info():
     return render_template('add_info.html',class_id=1)
 
 # create a new route to add question and answer
-@app.route('/question_manager', methods=['POST','GET'])
+@app.route('/question_manager', methods=['GET'])
 def question_manager():
-    
-    return render_template('question_manager.html')
+    classes=execute_query("SELECT * FROM Class")
+    #  get all question and answer from database
+    if request.method == 'POST':
+        class_id = request.form.get('class_id')
+        topic_id = request.form.get('topic_id')
+        chapter_id = request.form.get('chapter_id')
+        query = "SELECT QuestionID, QuestionContent FROM Question WHERE ClassID = ? AND TopicID = ? AND ChapterID = ?"
+        questions = execute_query(query, (class_id, topic_id, chapter_id))
+        if questions:
+            return jsonify(questions)
+        else:
+            return jsonify([])
+        
+        
+        
+    # return render_template('question_manager.html',classes=classes)
 
 @app.route('/question', methods=['GET'])
 def question_db():
@@ -204,7 +218,6 @@ def add_question():
     execute_query(query, (question_id, answer, correct_answer, explain)) # add answer to database
     return redirect("/question_manager")
     
-
 
 if __name__ == '__main__':
     app.run(debug=True)

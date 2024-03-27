@@ -15,9 +15,9 @@
         <div class="form-row mb-3">
             <div class="col-md-4">
                 <select class="form-control" id="class_select">
-                    <!-- <option value="">Select Class</option> -->
+                    <option value="">Select Class</option>
                     {% for class in classes %}
-                        <option value="{{ class.id }}">{{ class }}</option>
+                        <option value="{{ class[0] }}">Grade {{ class[1] }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -50,7 +50,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Tìm số hạng chứa \(x^{3} y\) trong khai triển \(\left(x y+\frac{1}{y}\right)^{5}\)</td>
+                        <td>{{classes}}</td>
                         <td>A. \(5 x^{3} y\).</td>
                         <td>B. \(3 x^{3} y\).</td>
                         <td>C. \(4 x^{3} y\).</td>
