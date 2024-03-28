@@ -13,7 +13,7 @@
     <div class="container mt-5">
         <h1 class="mb-4">All Questions</h1>
         <div class="form-row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <select class="form-control" id="class_select" onchange="loadChapter()">
                     <option value="">Select Class</option>
                     {% for class in classes %}
@@ -21,7 +21,8 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-3">
                 <select class="form-control" id="chapter_select" onchange="loadTopics()">
                     <option value="">Select Chapter</option>
                     <!-- Options for chapters will be populated dynamically based on selected class -->
@@ -33,6 +34,11 @@
                     <!-- Options for topics will be populated dynamically based on selected chapter -->
                 </select>
             </div>
+            <div class="col-md-2">
+                <!-- Button navigate to /question -->
+                <a style="float: right;" href="/question" class="btn btn-primary">Add Question</a>
+            </div>
+        
         </div>
         <div class="table-responsive">
             <table class="table table-bordered">
