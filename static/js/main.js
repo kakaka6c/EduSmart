@@ -13,12 +13,12 @@ function loadclasses() {
             data.forEach(class_ => {
                 for (var i = 0; i < classDropdown.length; i++) {
                     var option = document.createElement('option');
-                    option.value = class_[0];
+                    option.value = class_.id;
                     var classId = document.getElementById('class_show').dataset.classId;
-                    if (class_[0] == classId) {
+                    if (class_.id == classId) {
                         option.selected = true;
                     }
-                    option.textContent = class_[1];
+                    option.textContent = class_.name;
                     classDropdown[i].appendChild(option);
                 }
             });
@@ -40,9 +40,9 @@ function loadChapter() {
 
             data.forEach(chapter => {
                 var option = document.createElement('option');
-                option.value = chapter[0];
-                option.textContent = chapter[1];
-                if (chapter[0] == document.getElementById('chapter_show').dataset.classId) {
+                option.value = chapter.id;
+                option.textContent = chapter.name;
+                if (chapter.id == document.getElementById('chapter_show').dataset.classId) {
                     option.selected = true;
                 }
                 chapterDropdown.appendChild(option);

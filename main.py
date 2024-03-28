@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request,render_template,redirect,url_for
+import random
 import json
 import sqlite3
 from databaseHelper import *
@@ -241,6 +242,19 @@ def add_question():
     execute_query(query, (question_id, answer, correct_answer, explain)) # add answer to database
     return redirect("/question_manager")
 
+# forgot password and send code to email
+@app.route('/forgot_password', methods=['POST'])
+def forgot_password():
+    email = request.json.get('email')
+    is_exist=DB_HELPER.get_email(email)
+    
+    if is_exist:
+        code=random.randint(10000000,99999999)
+        
+        return jsonify({"message": "Code has been sent to your email"})
+    else:
+        return jsonify({"message": "Email does not exist"})
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

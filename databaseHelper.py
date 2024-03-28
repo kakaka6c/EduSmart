@@ -137,6 +137,22 @@ class DatabaseHelper:
             print("Lỗi khi truy vấn dữ liệu:", e)
             return None
     
+    def get_email(self,email):
+        # search if this email is already in the database
+        query = "SELECT * FROM User WHERE Email = ?"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (email,))
+            user = cursor.fetchone()
+            conn.close()
+            return True if user else False
+        except sqlite3.Error as e:
+            print("Lỗi khi truy vấn dữ liệu:", e)
+            return False
+        
+    
+    
 if __name__ == "__main__":
     helper = CreateDatabase("EduSmart.db")
     helper.create_database()
