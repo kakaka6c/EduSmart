@@ -4,11 +4,9 @@ import json
 import sqlite3
 from databaseHelper import *
 import hashlib
-from flask_cors import CORS
 import latex2mathjax
 
 app = Flask(__name__)
-CORS(app)
 DATABASE = 'EduSmart.db'
 DB_HELPER = DatabaseHelper(DATABASE)
 DB_CREATE = CreateDatabase(DATABASE)
