@@ -4,10 +4,11 @@ import json
 import sqlite3
 from databaseHelper import *
 import hashlib
-import codecs
+from flask_cors import CORS
 import latex2mathjax
 
 app = Flask(__name__)
+CORS(app)
 DATABASE = 'EduSmart.db'
 DB_HELPER = DatabaseHelper(DATABASE)
 DB_CREATE = CreateDatabase(DATABASE)
@@ -67,13 +68,15 @@ def create_database():
 # create a new route to login
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    username = data.get('username')
-    username = username.lower()
-    password = data.get('password')
+
+    email = request.form.get('email')
+    print(email)
+    email = email.lower()
+    password = request.form.get('password')
     password = encrypt_password(password)
-    query = "SELECT * FROM User WHERE Username = ? AND PasswordHash = ?"
-    user = execute_query(query, (username, password))
+    query = "SELECT * FROM User WHERE Email = ? AND PasswordHash = ?"
+    user = execute_query(query, (email, password))
+    print(user)
     if user:
         return jsonify({"message": "True"})
     else:
@@ -82,7 +85,7 @@ def login():
 # create a new route to register
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.json
+    data = request.form
     username = str(data.get('username'))
     # change to lowercase
     username = username.lower()
@@ -94,9 +97,10 @@ def register():
     dob = data.get('dob')
 
     query = "INSERT INTO User (Username, PasswordHash, Email, Phone, ClassID) VALUES (?, ?, ?, ?, ?)"
-    
+    print("INSERT INTO User (Username, PasswordHash, Email, Phone, ClassID) VALUES (?, ?, ?, ?, ?)",(username, password, email, phone, class_id))
     status=execute_query(query, (username, password, email, phone, class_id))
-    if status:
+    print(status)
+    if status==None:
         return jsonify({"message": "User added successfully"})
     else:
         return jsonify({"message": "User already exists"})
@@ -185,18 +189,6 @@ def add_info():
 def question_manager():
     classes=execute_query("SELECT * FROM Class")
     classes = [{"id": item[0], "name": item[1]} for item in classes]
-    # #  get all question and answer from database
-    # class_id = request.args.get('class_id')
-    # topic_id = request.args.get('topic_id')
-    # chapter_id = request.args.get('chapter_id')
-    # query = "SELECT QuestionID, QuestionContent FROM Question WHERE ClassID = ? AND TopicID = ? AND ChapterID = ?"
-    # questions = execute_query(query, (class_id, topic_id, chapter_id))
-    
-    # if questions:
-    #     json_data = [{"id": item[0], "question": item[1]} for item in questions]
-    #     return jsonify(json_data)
-    # else:
-    #     return jsonify([])
     
     questions=DB_HELPER.get_all_questions()
     if questions:
