@@ -5,8 +5,14 @@ import sqlite3
 from databaseHelper import *
 import hashlib
 import latex2mathjax
+from datetime import datetime, timedelta
+from flask_cors import CORS
+from token_manage import generate_token
+import utils
 
 app = Flask(__name__)
+CORS(app)
+
 DATABASE = 'EduSmart.db'
 DB_HELPER = DatabaseHelper(DATABASE)
 DB_CREATE = CreateDatabase(DATABASE)
@@ -66,42 +72,41 @@ def create_database():
 # create a new route to login
 @app.route('/login', methods=['POST'])
 def login():
-
-    email = request.form.get('email')
-    print(email)
+    request_data = request.json
+    email = request_data["email"]
     email = email.lower()
-    password = request.form.get('password')
+    password = request_data["password"]
     password = encrypt_password(password)
-    query = "SELECT * FROM User WHERE Email = ? AND PasswordHash = ?"
-    user = execute_query(query, (email, password))
-    print(user)
+    user=DB_HELPER.get_user_by_email(email)
+    user_id = user[0] if user else None
+    user_role = user[1] if user else None
     if user:
-        return jsonify({"message": "True"})
+        access_token = generate_token()
+        expiry_time = datetime.now() + timedelta(hours=24)
+        status_add_token=DB_HELPER.add_token(user_id, access_token, expiry_time)
+        if status_add_token==False:
+            access_token=DB_HELPER.get_token_by_user(user_id)[0]
+        return jsonify({"message": True, "access_token": access_token,"role":user_role})
     else:
-        return jsonify({"message": "False"})
+        return jsonify({"message": False, "access_token": ""})
+
 
 # create a new route to register
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.form
+    data = request.json
     username = str(data.get('username'))
-    # change to lowercase
     username = username.lower()
     password = data.get('password')
     password = encrypt_password(password)
     email = data.get('email')
-    phone = data.get('phone')
-    class_id = data.get('class_id')
     dob = data.get('dob')
-
-    query = "INSERT INTO User (Username, PasswordHash, Email, Phone, ClassID) VALUES (?, ?, ?, ?, ?)"
-    print("INSERT INTO User (Username, PasswordHash, Email, Phone, ClassID) VALUES (?, ?, ?, ?, ?)",(username, password, email, phone, class_id))
-    status=execute_query(query, (username, password, email, phone, class_id))
-    print(status)
-    if status==None:
-        return jsonify({"message": "User added successfully"})
+    
+    status = DB_HELPER.add_user(username, password, email, dob, "USER")
+    if status:
+        return jsonify({"message": True})
     else:
-        return jsonify({"message": "User already exists"})
+        return jsonify({"message": False})
     
 # create a new route to add class
 @app.route('/class', methods=['POST','GET'])
@@ -240,11 +245,16 @@ def forgot_password():
     
     if is_exist:
         code=random.randint(10000000,99999999)
-        
+        utils.send_email(email, "Your code is "+str(code))
         return jsonify({"message": "Code has been sent to your email"})
     else:
         return jsonify({"message": "Email does not exist"})
-    
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# create new route to delete old token
+@app.route('/delete_token', methods=['POST'])
+def delete_token():
+    token = request.json.get('token')
+    status = DB_HELPER.revoke_token(token)
+    return jsonify({"message": status})
+
+if __name__ == '__main__':    app.run(debug=True,host="0.0.0.0",port=5000)
