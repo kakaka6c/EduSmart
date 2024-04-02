@@ -179,6 +179,20 @@ class DatabaseHelper:
             print("Lỗi khi thêm người dùng:", e)
             return False
     
+    def add_code(self, email, code, expired_at):
+        query = "INSERT INTO PasswordReset (Email, Code, expired_at) VALUES (?, ?, ?)"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (email, code, expired_at))
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print("Lỗi khi thêm mã code:", e)
+            return False
+    
+
     def revoke_token(self, token):
         query = "DELETE FROM AccessToken WHERE access_token = ?"
         try:
@@ -203,6 +217,45 @@ class DatabaseHelper:
             conn.close()
         except sqlite3.Error as e:
             print("Lỗi khi làm mới token:", e)
+            return False
+
+    def delete_code(self, email):
+        query = "DELETE FROM PasswordReset WHERE Email = ?"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (email,))
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print("Lỗi khi xóa mã code:", e)
+            return False
+
+    def update_password(self, email, password):
+        query = "UPDATE User SET PasswordHash = ? WHERE Email = ?"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (password, email))
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print("Lỗi khi thay đổi mật khẩu:", e)
+            return False
+
+    def compare_code(self, email, code):
+        query = "SELECT * FROM PasswordReset WHERE Email = ? AND Code = ? AND expired_at > datetime('now')"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (email, code))
+            result = cursor.fetchone()
+            conn.close()
+            return True if result else False
+        except sqlite3.Error as e:
+            print("Lỗi khi truy vấn dữ liệu:", e)
             return False
 
     def get_user_by_token(self, token):

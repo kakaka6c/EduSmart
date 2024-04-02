@@ -40,12 +40,3 @@ def send_email(recipient_email, body):
 # Email credentials
 
 
-# Recipient email address
-recipient_email = 'homnaylatest11@gmail.com'
-
-# Email details
-
-body = 'Mã của bạn là 93888475.'
-
-
-send_email(sender_email, sender_password, recipient_email, subject, body, smtp_server, smtp_port)
