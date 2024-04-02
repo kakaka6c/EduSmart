@@ -257,4 +257,6 @@ def delete_token():
     status = DB_HELPER.revoke_token(token)
     return jsonify({"message": status})
 
+"ahsadhkjsadkjsa"
+
 if __name__ == '__main__':    app.run(debug=True,host="0.0.0.0",port=5000)
