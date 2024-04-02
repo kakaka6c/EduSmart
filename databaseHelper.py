@@ -322,19 +322,46 @@ class DatabaseHelper:
             print("Lỗi khi truy vấn dữ liệu:", e)
             return None
         
-    def generate_questions(self, class_id, topic_id=None, chapter_id=None, num_questions=1):
-        # if nothing None, return all questions and order by usage count
-        if topic_id is None and chapter_id is None:
-            query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID WHERE q.ClassID = ? ORDER BY q.UsageCount DESC LIMIT ?"
-        elif topic_id is None:
-            query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID WHERE q.ClassID = ? AND q.ChapterID = ? ORDER BY q.UsageCount DESC LIMIT ?"
-
+    def generate_questions(self, class_ids, topic_ids=None, chapter_ids=None, num_questions=1):
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            cursor.execute(query, (class_id, topic_id, chapter_id, num_questions))
+            
+            # Tạo danh sách các điều kiện WHERE cho class_id, topic_id và chapter_id
+            conditions = []
+            params = []
+
+            if class_ids:
+                conditions.append("q.ClassID IN ({})".format(','.join(['?']*len(class_ids))))
+                params.extend(class_ids)
+
+            if topic_ids:
+                conditions.append("q.TopicID IN ({})".format(','.join(['?']*len(topic_ids))))
+                params.extend(topic_ids)
+
+            if chapter_ids:
+                conditions.append("q.ChapterID IN ({})".format(','.join(['?']*len(chapter_ids))))
+                params.extend(chapter_ids)
+
+            where_clause = " AND ".join(conditions)
+            # Thêm điều kiện WHERE vào câu truy vấn
+            if not where_clause:
+                query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID ORDER BY q.UsageCount DESC LIMIT ?"
+                params.append(num_questions)
+            else:
+                query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID WHERE {} ORDER BY q.UsageCount DESC LIMIT ?".format(where_clause)
+                params.append(num_questions)
+
+            cursor.execute(query, params)
             questions = cursor.fetchall()
+
+            # Cập nhật usage count
+            for question in questions:
+                cursor.execute("UPDATE Question SET UsageCount = UsageCount + 1 WHERE QuestionID = ?", (question[0],))
+
+            conn.commit()
             conn.close()
+
             return questions
         except sqlite3.Error as e:
             print("Lỗi khi truy vấn dữ liệu:", e)

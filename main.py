@@ -105,18 +105,21 @@ def login():
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
-    username = str(data.get("username"))
+    username = str(data.get("name"))
     username = username.lower()
     password = data.get("password")
     password = encrypt_password(password)
     email = data.get("email")
-    dob = data.get("dob")
+    try:
+        dob= data.get("dob")
+    except:
+        dob = None
 
     status = DB_HELPER.add_user(username, password, email, dob, "USER")
     if status:
-        return jsonify({"message": True})
+        return jsonify({"message": True,"error": ""})
     else:
-        return jsonify({"message": False})
+        return jsonify({"message": False,"error": "Email already exists"}),401
 
 
 # create a new route to add class
@@ -319,6 +322,33 @@ def delete_token():
     status = DB_HELPER.revoke_token(token)
     return jsonify({"message": status})
 
+@app.route('/generate-questions', methods=['POST'])
+def generate_questions_route():
+    authorization_header = request.headers.get('Authorization')
+    if authorization_header and authorization_header.startswith('Bearer '):
+        token = authorization_header.split(' ')[1]
+        user_id = DB_HELPER.get_user_by_token(token)
+        if user_id is None:
+            return jsonify({"message": "Please login to use this feature!!!!"}), 401
+        else:
+            try:
+                data = request.json
+                class_ids = data.get('class_ids', [])
+                topic_ids = data.get('topic_ids', [])
+                chapter_ids = data.get('chapter_ids', [])
+                num_questions = data.get('num_questions', 1)
+
+                # Gọi hàm generate_questions với các tham số từ request
+                questions = DB_HELPER.generate_questions(class_ids, topic_ids, chapter_ids, num_questions)
+
+                if questions is not None:
+                    return jsonify({"questions": questions})
+                else:
+                    return jsonify({"message": "Error creating question !!!"}), 500
+            except Exception as e:
+                return jsonify({"message": "An unknown error: {}".format(e)}), 500
+    else:
+        return jsonify({"message": "Please login to use this feature!!!!"}), 401
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+        app.run(debug=True, host="0.0.0.0", port=5000)
