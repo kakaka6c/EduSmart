@@ -34,11 +34,21 @@ def execute_query(query, params=()):
         print("Lỗi trong quá trình thực thi truy vấn:", e)
         return None
 
-
 def encrypt_password(password):  # Hàm mã hóa mật khẩu
     password = hashlib.md5(password.encode()).hexdigest()
     return password
 
+def token_to_uid(authorization_header):
+    user_id = None
+    token = None
+    print(authorization_header)
+    if authorization_header and authorization_header.startswith('Bearer '):
+        # Tách chuỗi token từ header 'Authorization'
+        token = authorization_header.split(' ')[1]
+        user_id = DB_HELPER.get_user_by_token(token)[0]
+        return user_id,token
+    else:
+        return user_id,token
 
 @app.route("/users", methods=["GET"])
 def get_users():
@@ -50,21 +60,19 @@ def get_users():
         return jsonify([])
 
 
-@app.route("/users", methods=["POST"])
-def add_user():
-    data = request.json
-    username = data.get("username")
-    password = data.get(
-        "password"
-    )  # Cần mã hóa mật khẩu trước khi lưu vào cơ sở dữ liệu
-    email = data.get("email")
-    phone = data.get("phone")
-    class_id = data.get("class_id")
 
-    query = "INSERT INTO User (Username, PasswordHash, Email, Phone, ClassID) VALUES (?, ?, ?, ?, ?)"
-    execute_query(query, (username, password, email, phone, class_id))
-    return jsonify({"message": "User added successfully"})
-
+@app.route("/get_info", methods=["GET"])
+def get_info():
+    # require token in headers
+    authorization_header = request.headers.get('Authorization')
+    user_id,token=token_to_uid(authorization_header)
+    if user_id is None:
+        return jsonify({"message": "Please login to use this feature!!!!"}), 401
+    else:
+        user_info = DB_HELPER.get_user_by_token(token)
+        print(user_info)
+        user_info = {"Name": user_info[1], "Email": user_info[2], "DoB": user_info[3], "Status": user_info[4]}
+        return jsonify({"message": "Success", "user_info": user_info})
 
 # create a new route to create database
 @app.route("/database", methods=["GET"])
@@ -85,20 +93,21 @@ def login():
     email = email.lower()
     password = request_data["password"]
     password = encrypt_password(password)
-    user = DB_HELPER.get_user_by_email(email)
+    user = DB_HELPER.get_user_by_email(email,password)
     user_id = user[0] if user else None
-    user_role = user[1] if user else None
+    user_role = user[7] if user else None
     if user:
         access_token = generate_token()
         expiry_time = datetime.now() + timedelta(hours=24)
-        status_add_token = DB_HELPER.add_token(user_id, access_token, expiry_time)
-        if status_add_token == False:
-            access_token = DB_HELPER.get_token_by_user(user_id)[0]
-        return jsonify(
-            {"message": True, "access_token": access_token, "role": user_role}
-        )
+        status_add_token = DB_HELPER.add_token(user_id, email,access_token, expiry_time)
+        if status_add_token:
+            return jsonify(
+                {"message": "Login Successfully", "access_token": access_token, "role": user_role}
+            )
+        else:
+            return jsonify({"message": "Email or Password is incorrect !!!!", "access_token": "","role": ""}),401
     else:
-        return jsonify({"message": False, "access_token": ""})
+        return jsonify({"message": "Email or Password is incorrect !!!!", "access_token": "","role": ""}),401
 
 
 # create a new route to register
@@ -106,7 +115,6 @@ def login():
 def register():
     data = request.json
     username = str(data.get("name"))
-    username = username.lower()
     password = data.get("password")
     password = encrypt_password(password)
     email = data.get("email")
@@ -114,12 +122,51 @@ def register():
         dob= data.get("dob")
     except:
         dob = None
-
-    status = DB_HELPER.add_user(username, password, email, dob, "USER")
+    access_token = ""
+    status = DB_HELPER.add_user(username, password, email, dob, "USER", access_token)
     if status:
         return jsonify({"message": True,"error": ""})
     else:
         return jsonify({"message": False,"error": "Email already exists"}),401
+
+# create a new route to edit user
+@app.route("/edit_user", methods=["POST"])
+def edit_user():
+    authorization_header = request.headers.get('Authorization')
+    user_id, token = token_to_uid(authorization_header)
+    print(user_id)
+    old_password = None
+    if user_id is None:
+        return jsonify({"message": "Please login to use this feature!!!!"}), 401
+    else:
+        data = request.json
+        username = str(data.get("name"))
+        email = data.get("email")
+        dob = data.get("dob")
+        try:
+            old_password = data.get("old_password")
+        except:
+            old_password = None
+
+        try:
+            password = data.get("new_password")
+            if password:
+                password = encrypt_password(password)
+        except:
+            password = None
+
+        if old_password:
+            old_password = encrypt_password(old_password)
+            user = DB_HELPER.get_user_by_uid(user_id)
+            print(user)
+            if old_password != user[2]:
+                return jsonify({"message": "Old password is not correct"}), 401
+            
+        status = DB_HELPER.update_user(user_id, email, username, password, dob)
+        if status:
+            return jsonify({"message": "Change information successfully"})
+        else:
+            return jsonify({"message": "Change information failed"}), 401
 
 
 # create a new route to add class
@@ -142,7 +189,6 @@ def class_db():
             return jsonify(json_data)
         else:
             return jsonify([])
-
 
 # create docs for method
 # create a new route to add topic
@@ -211,12 +257,10 @@ def delete_database():
     execute_query(query)
     return jsonify({"message": "Database deleted successfully"})
 
-
 # create a new route to show add_info template
 @app.route("/add_info", methods=["GET"])
 def add_info():
     return render_template("add_info.html", class_id=1)
-
 
 # create a new route to add question and answer
 @app.route("/question_manager", methods=["GET"])
@@ -325,30 +369,30 @@ def delete_token():
 @app.route('/generate-questions', methods=['POST'])
 def generate_questions_route():
     authorization_header = request.headers.get('Authorization')
-    if authorization_header and authorization_header.startswith('Bearer '):
-        token = authorization_header.split(' ')[1]
-        user_id = DB_HELPER.get_user_by_token(token)
-        if user_id is None:
-            return jsonify({"message": "Please login to use this feature!!!!"}), 401
-        else:
-            try:
-                data = request.json
-                class_ids = data.get('class_ids', [])
-                topic_ids = data.get('topic_ids', [])
-                chapter_ids = data.get('chapter_ids', [])
-                num_questions = data.get('num_questions', 1)
-
-                # Gọi hàm generate_questions với các tham số từ request
-                questions = DB_HELPER.generate_questions(class_ids, topic_ids, chapter_ids, num_questions)
-
-                if questions is not None:
-                    return jsonify({"questions": questions})
-                else:
-                    return jsonify({"message": "Error creating question !!!"}), 500
-            except Exception as e:
-                return jsonify({"message": "An unknown error: {}".format(e)}), 500
-    else:
+    user_id,token=token_to_uid(authorization_header)
+    if user_id is None:
         return jsonify({"message": "Please login to use this feature!!!!"}), 401
+    else:
+        try:
+            data = request.json
+            class_ids = data.get('class_ids', [])
+            topic_ids = data.get('topic_ids', [])
+            chapter_ids = data.get('chapter_ids', [])
+            num_questions = data.get('num_questions', 1)
+            if class_ids == [None] and topic_ids == [] and chapter_ids == []:
+                return jsonify({"message": "Please select class !!!"}), 400
+            # Gọi hàm generate_questions với các tham số từ request
+            questions = DB_HELPER.generate_questions(class_ids, topic_ids, chapter_ids, num_questions,token,user_id)
+            # create json response with questions
+            if questions is not None:
+                # return id,name,position
+                json_data = {"question":[{"id": item[0], "name": item[1],"position":questions.index(item)} for item in questions]}
+                
+                return jsonify(json_data)
+            else:
+                return jsonify({"message": "Error creating question !!!"}), 500
+        except Exception as e:
+            return jsonify({"message": "An unknown error: {}".format(e)}), 500
 
-if __name__ == "__main__":
-        app.run(debug=True, host="0.0.0.0", port=5000)
+
+if __name__ == "__main__":    app.run(debug=True, host="0.0.0.0", port=5000)

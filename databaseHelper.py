@@ -113,12 +113,26 @@ class DatabaseHelper:
     def __init__(self, db_name):
         self.db_name = db_name
         
-    def get_user_by_email(self, email):
-        query = "SELECT UserID,status FROM User WHERE Email = ?"
+    def get_user_by_email(self, email,password):
+        # check if email and password are correct
+        query = "SELECT * FROM User WHERE Email = ? AND PasswordHash = ?"
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            cursor.execute(query, (email,))
+            cursor.execute(query, (email, password))
+            user = cursor.fetchone()
+            conn.close()
+            return user
+        except sqlite3.Error as e:
+            print("Lỗi khi truy vấn dữ liệu:", e)
+            return None
+    
+    def get_user_by_uid(self, user_id):
+        query = "SELECT * FROM User WHERE UserID = ?"
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, (user_id,))
             user = cursor.fetchone()
             conn.close()
             return user
@@ -153,12 +167,13 @@ class DatabaseHelper:
             print("Lỗi khi truy vấn dữ liệu:", e)
             return False
     
-    def add_token(self, user_id, access_token, expiry_token):
-        query = "INSERT INTO AccessToken (UserID, access_token, expiry_token) VALUES (?, ?, ?)"
+    def add_token(self, user_id, email,access_token, expiry_time):
+        # update the token for the user
+        query = "UPDATE AccessToken SET email= ?, access_token = ?, expiry_token = ? WHERE UserID = ?"
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            cursor.execute(query, (user_id, access_token, expiry_token))
+            cursor.execute(query, (email, access_token, expiry_time, user_id))
             conn.commit()
             conn.close()
             return True
@@ -166,18 +181,48 @@ class DatabaseHelper:
             print("Lỗi khi thêm token:", e)
             return False
     
-    def add_user(self, username, password, email, dob, status):
-        query = "INSERT INTO User (Username, PasswordHash, Email, DoB, Status) VALUES (?, ?, ?, ?, ?)"
+    def add_user(self, username, password, email, dob, status,token):
+        add_user_to_User = "INSERT INTO User (Username, PasswordHash, Email, DoB, Status) VALUES (?, ?, ?, ?, ?)"
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            cursor.execute(query, (username, password, email, dob, status))
+            cursor.execute(add_user_to_User, (username, password, email, dob, status))
+            add_token_to_Access_Token = "INSERT INTO AccessToken (UserID, access_token) VALUES (?, ?)"
+            cursor.execute("SELECT UserID FROM User WHERE Email = ?", (email,))
+            user_id = cursor.fetchone()[0]
+            cursor.execute(add_token_to_Access_Token, (user_id, token))
             conn.commit()
             conn.close()
             return True
         except sqlite3.Error as e:
             print("Lỗi khi thêm người dùng:", e)
             return False
+    
+    def update_user(self, user_id, email, username, password, dob):
+        query = "UPDATE User SET Email = ?, Username = ?,"
+        parameters = [email, username]
+
+        # Kiểm tra xem người dùng có muốn thay đổi mật khẩu không
+        if password is not None:
+            query += " PasswordHash = ?,"
+            parameters.append(password)
+
+        query += " DoB = ? WHERE UserID = ?"
+        parameters.extend([dob, user_id])
+        # print(query, parameters)
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            cursor.execute(query, parameters)
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print("Lỗi khi cập nhật thông tin người dùng:", e)
+            return False
+
+    
+        
     
     def add_code(self, email, code, expired_at):
         query = "INSERT INTO PasswordReset (Email, Code, expired_at) VALUES (?, ?, ?)"
@@ -192,7 +237,6 @@ class DatabaseHelper:
             print("Lỗi khi thêm mã code:", e)
             return False
     
-
     def revoke_token(self, token):
         query = "DELETE FROM AccessToken WHERE access_token = ?"
         try:
@@ -296,6 +340,7 @@ class DatabaseHelper:
         except sqlite3.Error as e:
             print("Lỗi khi truy vấn dữ liệu:", e)
             return None
+        
     def load_questions_by_chapter(self, chapter_id):
         query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID WHERE q.ChapterID = ?"
         try:
@@ -322,27 +367,22 @@ class DatabaseHelper:
             print("Lỗi khi truy vấn dữ liệu:", e)
             return None
         
-    def generate_questions(self, class_ids, topic_ids=None, chapter_ids=None, num_questions=1):
+    def generate_questions(self,class_ids, topic_ids=None, chapter_ids=None, num_questions=1,token=None,user_id=None):
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            
             # Tạo danh sách các điều kiện WHERE cho class_id, topic_id và chapter_id
             conditions = []
             params = []
-
             if class_ids:
                 conditions.append("q.ClassID IN ({})".format(','.join(['?']*len(class_ids))))
                 params.extend(class_ids)
-
             if topic_ids:
                 conditions.append("q.TopicID IN ({})".format(','.join(['?']*len(topic_ids))))
                 params.extend(topic_ids)
-
             if chapter_ids:
                 conditions.append("q.ChapterID IN ({})".format(','.join(['?']*len(chapter_ids))))
                 params.extend(chapter_ids)
-
             where_clause = " AND ".join(conditions)
             # Thêm điều kiện WHERE vào câu truy vấn
             if not where_clause:
@@ -351,18 +391,36 @@ class DatabaseHelper:
             else:
                 query = "SELECT q.QuestionID, q.QuestionContent AS Question, a.AnswerID, a.AnswerOptions AS Answer, a.CorrectAnswer, a.Explaination FROM Question q LEFT JOIN Answers a ON q.QuestionID = a.QuestionID WHERE {} ORDER BY q.UsageCount DESC LIMIT ?".format(where_clause)
                 params.append(num_questions)
-
             cursor.execute(query, params)
             questions = cursor.fetchall()
-
-            # Cập nhật usage count
             for question in questions:
                 cursor.execute("UPDATE Question SET UsageCount = UsageCount + 1 WHERE QuestionID = ?", (question[0],))
-
+                # add question to exam_questions
+                exam_id = self.create_an_exam(cursor,user_id)
+                self.add_exam_question(cursor,exam_id, question[0], questions.index(question)+1, 1)
             conn.commit()
             conn.close()
-
             return questions
         except sqlite3.Error as e:
             print("Lỗi khi truy vấn dữ liệu:", e)
             return None
+
+    def create_an_exam(self, cursor,user_id):
+        query = "INSERT INTO Exam (UserID) VALUES (?)"
+        try:
+            cursor.execute(query, (user_id,))
+            cursor.execute("SELECT last_insert_rowid()")
+            exam_id = cursor.fetchone()[0]
+            return exam_id
+        except sqlite3.Error as e:
+            print("Lỗi khi tạo bài thi:", e)
+            return None
+    
+    def add_exam_question(self,cursor, exam_id, question_id, question_order, score):
+        query = "INSERT INTO Exam_Questions (ExamID, QuestionID, QuestionOrder, Score) VALUES (?, ?, ?, ?)"
+        try:
+            cursor.execute(query, (exam_id, question_id, question_order, score))
+            return True
+        except sqlite3.Error as e:
+            print("Lỗi khi thêm câu hỏi vào bài thi:", e)
+            return False
